@@ -3,13 +3,24 @@
 <head>
   <title>HeatMap des Mobilisations</title>
   <meta charset="utf-8"/>
-  <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+    integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+    crossorigin=""/>
   <style>
     .map {
       width:800px;
       height:600px;
     }
   </style>
+
+  <script
+    src="https://code.jquery.com/jquery-3.3.1.min.js"
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+    integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+    crossorigin=""></script>
+  <script src="leaflet-timeline-slider.js"></script>
 </head>
 <body>
   <div class="map">
@@ -18,7 +29,6 @@
     </noscript>
   </div>
 
-  <script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>
   <script>
     (function () {
       var FEEDS = [
@@ -33,7 +43,9 @@
         'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/securite.geojson',
         'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/transport.geojson'
         ];
+
       var NOW = new Date();
+
 
       // create map
       var map = L.map(document.querySelector('.map'));
@@ -50,11 +62,6 @@
 
       // add earthquake layer
       var earthquakes = L.geoJson([], {
-        onEachFeature: function (feature, layer) {
-          var props = feature.properties;
-
-          layer.bindPopup('<a href="' + props.Source + '">' + props.Titre + '</a>');
-        },
         pointToLayer: function (feature, latlng) {
 
           return L.circleMarker(latlng, {
@@ -74,6 +81,20 @@
         xhr.open('GET', item, true);
         xhr.send();
       });
+    
+      L.control.timelineSlider({
+        position: "topright",
+        timelineItems: [
+                "05/12/2019", 
+                "12/12/2019", 
+                "19/12/2019", 
+                "26/12/2019",
+                "02/01/2020",
+                "09/01/2020",
+                "16/01/2020",
+                "23/01/2020"
+            ]
+      }).addTo(map);    
     })();
   </script>
 </body>
