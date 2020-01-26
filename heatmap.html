@@ -60,7 +60,6 @@
         xhr.open('GET', item, true);
         xhr.send();
       });
-      console.log(data);
 
       // create map
       var map = L.map(document.querySelector('.map'));
@@ -75,43 +74,67 @@
           attribution: 'Sources: Geographes ESR - Cartographie des mouvements sociaux'
           }).addTo(map);
 
+      // init heatmap
+      var heatLayer = L.heatLayer([], {maxZoom: 12});
+      map.addLayer(heatLayer);
+      var eventLayer = L.geoJson();
+      map.addLayer(eventLayer);
+
       getDataAddMarkers = function( {label, value, map, exclamation} ) {
           var selected = (new Date(label)).getTime();
-
-          map.eachLayer(function (layer) {
-                if (layer instanceof L.Marker) {
-                    map.removeLayer(layer);
-                }
-          });
-
           
-          filteredData = data.filter(function (i, n) {
-                var start = (new Date(i.properties.Debut)).getTime();
-                return isNaN(start) || start <= selected;
+          // Clear layers
+          map.removeLayer(heatLayer);
+          map.removeLayer(eventLayer);
+
+          // Filter events before selected date
+          var filteredData = [];
+          var heatMapData = [];
+          data.forEach(function (d) {
+                var start = (new Date(d.properties.Debut)).getTime();
+                var end = (new Date(d.properties.Fin)).getTime();
+                if (isNaN(start) 
+                    || (start <= selected && (isNaN(end) || end >= selected))) 
+                {
+                    filteredData.push(d);
+                    heatMapData.push(
+                        new L.latLng(
+                            d.geometry.coordinates[1],
+                            d.geometry.coordinates[0], 
+                            10.0
+                        )
+                    );
+                }
             });
           
-          L.geoJson(filteredData, {
+          //* Add event points
+          eventLayer = L.geoJson(filteredData, {
                     pointToLayer: function (feature, latlng) {
-                        console.log("add");
                         return L.circleMarker(latlng, {
                             color: '#FF0000',
                             radius: 1
                         });
                     }
                 }).addTo(map);
+          map.addLayer(eventLayer);
+          //*/
+
+          // Heat map
+          heatLayer = L.heatLayer(heatMapData, {maxZoom: 12});
+          map.addLayer(heatLayer);
       };
     
       L.control.timelineSlider({
         position: "topright",
         timelineItems: [
                 "05/12/2019", 
-                //"12/12/2019", 
+                "12/12/2019", 
                 "19/12/2019", 
-                //"26/12/2019",
+                "26/12/2019",
                 "02/01/2020",
-                //"09/01/2020",
+                "09/01/2020",
                 "16/01/2020",
-                //"23/01/2020",
+                "23/01/2020",
                 "30/01/2020"
             ],
         changeMap: getDataAddMarkers
