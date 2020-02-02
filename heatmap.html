@@ -1,145 +1,173 @@
-<!doctype html>
 <html>
-<head>
-  <title>HeatMap des Mobilisations</title>
-  <meta charset="utf-8"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
-    integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
-    crossorigin=""/>
-  <style>
-    .map {
-      width:800px;
-      height:600px;
-    }
-  </style>
+  <head>
+    <title>Leaflet.timeline</title>
+    <meta charset="utf-8"/>
 
-  <script
-    src="https://code.jquery.com/jquery-3.3.1.min.js"
-    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-    crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
-    integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
-    crossorigin=""></script>
-  <script src="leaflet-timeline-slider.js"></script>
-  <script src="leaflet-heat.js"></script>
-</head>
-<body>
-  <div class="map">
-    <noscript>
-      This example requires javascript.
-    </noscript>
-  </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.4.0/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment.min.js"></script>
 
-  <script>
-    (function () {
-        // Load data      
-        var FEEDS = [
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/autres.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/culture.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/education.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/esr.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/indus_energie.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/justice.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/multi.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/sante.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/securite.geojson',
-        'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/transport.geojson'
-        ];
-      var NOW = new Date();
+    <script src="leaflet-heat.js"></script>
+    <script src="Timeline.js"></script>
+    <script src="TimelineSliderControl.js"></script>
 
-      // load data asynchronously
-      var data = [];
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.4.0/leaflet.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/leaflet-timeline.css">
+    <style>
+      html, body{
+        margin: 0;
+        padding: 0;
+        font-family: "Open Sans", sans-serif;
+      }
+      #info{
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 0;
+        padding: 1em;
+      }
+      #map{
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+      }
+      .leaflet-bottom.leaflet-left{
+        width: 100%;
+      }
+      .leaflet-control-container .leaflet-timeline-controls{
+        box-sizing: border-box;
+        width: 100%;
+        margin: 0;
+        margin-bottom: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <script>
+      // Load data      
+      var FEEDS = [
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/autres.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/culture.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/education.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/esr.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/indus_energie.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/justice.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/multi.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/sante.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/securite.geojson',
+      'https://raw.githubusercontent.com/geographesESR/cartographie-des-mouvements-sociaux/master/transport.geojson'
+      ];
+
+      // load data synchronously
+      var data = {'features':[]};
       FEEDS.forEach(function(item, index, array) {
         var xhr = new XMLHttpRequest();
         xhr.onload = function () {
             var results = JSON.parse(xhr.responseText);
             results.features.forEach(function(feature){
-                data.push(feature);
+                data.features.push(feature);
             });
         };
-        xhr.open('GET', item, true);
+        xhr.open('GET', item, false);
         xhr.send();
+      });    
+    </script>
+
+    <script>
+      var osmUrl = 'https://services.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+      var osmAttrib = 'Sources: Geographes ESR - <a href="https://geographesesr.github.io/cartographie-des-mouvements-sociaux/">Cartographie des mouvements sociaux</a>';
+      var osm = L.tileLayer(osmUrl, {
+        maxZoom: 18,
+        attribution: osmAttrib
+      });
+      var map = L.map('map', {
+        layers: [osm],
+        center: new L.LatLng(47,2),
+        zoom: 6
       });
 
-      // create map
-      var map = L.map(document.querySelector('.map'));
-      // center in colorado
-      map.setView([47, 2], 6);
-      // add basemap
-      L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-          /**
-           * http://services.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer?f=pjson
-           * copyrightText
-           */
-          attribution: 'Sources: Geographes ESR - Cartographie des mouvements sociaux'
-          }).addTo(map);
-
-      // init heatmap
+      // Init and update HeatMap
       var heatLayer = L.heatLayer([], {maxZoom: 12});
       map.addLayer(heatLayer);
-      var eventLayer = L.geoJson();
-      map.addLayer(eventLayer);
+      function updateHeatMap(timeline){
+        var displayed = timeline.getLayers();
+        map.removeLayer(heatLayer);
+        var heatMapData = [];
+        displayed.forEach(function(event){
+          heatMapData.push(
+                    new L.latLng(
+                        event._latlng.lat,
+                        event._latlng.lng, 
+                        10.0
+                    )
+                );
+        });
+        heatLayer = L.heatLayer(heatMapData, {maxZoom: 12});
+        map.addLayer(heatLayer);
+      }
 
-      getDataAddMarkers = function( {label, value, map, exclamation} ) {
-          var selected = (new Date(label)).getTime();
-          
-          // Clear layers
-          map.removeLayer(heatLayer);
-          map.removeLayer(eventLayer);
+      // Get interval between start and end of an event
+      var getInterval = function(event) {
+        var e_start = event.properties.Debut;          
+        var e_end = event.properties.Fin;
+        if(!e_start || 0 === e_start.length){
+          e_start = "05/12/2019"; // start of riots
+        }
+        if(!e_end || 0 === e_end.length){
+          e_end = e_start; // let us suppose that
+        }
+        // split date to works with 2020 dates
+        var s_start = e_start.split("/");
+        var s_end = e_end.split("/");
 
-          // Filter events before selected date
-          var filteredData = [];
-          var heatMapData = [];
-          data.forEach(function (d) {
-                var start = (new Date(d.properties.Debut)).getTime();
-                var end = (new Date(d.properties.Fin)).getTime();
-                if (isNaN(start) 
-                    || (start <= selected && (isNaN(end) || end >= selected))) 
-                {
-                    filteredData.push(d);
-                    heatMapData.push(
-                        new L.latLng(
-                            d.geometry.coordinates[1],
-                            d.geometry.coordinates[0], 
-                            10.0
-                        )
-                    );
-                }
-            });
-          
-          //* Add event points
-          eventLayer = L.geoJson(filteredData, {
-                    pointToLayer: function (feature, latlng) {
-                        return L.circleMarker(latlng, {
-                            color: '#FF0000',
-                            radius: 1
-                        });
-                    }
-                }).addTo(map);
-          map.addLayer(eventLayer);
-          //*/
-
-          // Heat map
-          heatLayer = L.heatLayer(heatMapData, {maxZoom: 12});
-          map.addLayer(heatLayer);
+        return {
+          start: new Date(s_start[2],s_start[1]-1,s_start[0]).getTime(),
+          end:   new Date(s_end[2],s_end[1]-1,s_end[0]).getTime()
+        };
       };
-    
-      L.control.timelineSlider({
-        position: "topright",
-        timelineItems: [
-                "05/12/2019", 
-                "12/12/2019", 
-                "19/12/2019", 
-                "26/12/2019",
-                "02/01/2020",
-                "09/01/2020",
-                "16/01/2020",
-                "23/01/2020",
-                "30/01/2020"
-            ],
-        changeMap: getDataAddMarkers
-      }).addTo(map);    
-    })();
-  </script>
-</body>
+
+      var timelineControl = L.timelineSliderControl({
+        formatOutput: function(date) {
+          var d = new Date(date);
+          var day = d.getDate();
+          var month = d.getMonth()+1;
+          return (day < 10 ? "0"+day : day) + "-" + (month < 10 ? "0"+month : month) + "-" + d.getFullYear();
+        },
+        enableKeyboardControls: true
+      });
+
+      var timeline = L.timeline(data, {
+        getInterval: getInterval,
+        pointToLayer: function(data, latlng){
+          return L.circleMarker(latlng, {
+            radius: 1,
+            color: '#FF0000'
+          }).bindPopup(
+            '<h3>' + data.properties.Titre + '</h3>\n<br>\n' +
+            '<h4> Secteur: ' + data.properties.Secteur + '</h4>\n<br>\n' +
+            '<strong>Description:</strong>' + data.properties.Description + '\n<br>\n' +
+            '<strong>Type:</strong>' + data.properties.Type + '\n<br>\n' +
+            '<strong>Motif:</strong>' + data.properties.Motif + '\n<br>\n' +
+            '<strong>Date début:</strong>' + data.properties.Debut + '\n<br>\n' +
+            '<strong>Date fin:</strong>' + data.properties.Fin + '\n<br>\n' +
+            '<strong>Source:</strong>' + data.properties.Source
+          );
+        }
+      });
+
+      timelineControl.addTo(map);
+      timelineControl.addTimelines(timeline);
+      timeline.addTo(map);
+      timeline.on('change', function(e){
+        updateHeatMap(e.target);
+      });
+
+      updateHeatMap(timeline);
+    </script>
+  </body>
 </html>
+
